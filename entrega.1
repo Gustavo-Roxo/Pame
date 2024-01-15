@@ -1,0 +1,140 @@
+const prompt=require("prompt-sync")({sigint:true})
+
+class Usuario{
+    constructor(id,nome,contato,reserva){
+        this.id=id
+        this.nome=nome
+        this.contato=contato
+        this.reserva=reserva
+    }
+}
+
+class Propriedade{
+    constructor(id,nome,endereco,capacidade,quartos,preco,disponibilidade){
+        this.id=id
+        this.nome=nome
+        this.endereco=endereco
+        this.capacidade=capacidade
+        this.quartos=quartos
+        this.preco=preco
+        this.disponibilidade=disponibilidade
+    }
+}
+
+class Reserva{
+    constructor(id,id_propriedade,id_usuario,checkin,checkout,total,status){
+        this.id=id
+        this.id_propriedade=id_propriedade
+        this.id_usuario=id_usuario
+        this.checkin=checkin
+        this.checkout=checkout
+        this.total=total
+        this.status=status
+    }
+}
+
+class Anuncio{
+    constructor(id,id_proprietario,id_propriedade,titulo,descricao,status){
+        this.id=id
+        this.id_proprietario=id_proprietario
+        this.id_propriedade=id_propriedade
+        this.titulo=titulo
+        this.descricao=descricao
+        this.status=status
+    }
+}
+
+var cadastros=[]
+var usuarios=[]
+var propriedades=[]
+var reservas=[]
+var anuncios=[]
+var log=false
+var login
+var in_login=0
+var programa=true
+
+class Cadastro{
+    constructor(nome,senha){
+        this.nome=nome
+        this.senha=senha
+    }
+}
+
+class Sistema{
+    cadastro(nome,senha){
+        if(cadastros.length()==0){
+            let a = new Cadastro(nome,senha)
+            cadastros.append(a)
+        }
+        else{
+            var repetido=false
+            for(let i in cadastros){
+                if(i.nome==nome){
+                    console.log("nome repetido\n")
+                    repetido=true
+                    break
+                }
+            }
+            if(repetido=false){
+                let a = new Cadastro(nome,senha)
+                cadastros.append(a)
+            }
+        }
+    }
+
+    login(nome,senha){
+        if(cadastros.length()==0){
+            console.log("login inválido\n")
+        }
+        else{
+            var encontrado=false
+            var indice=0
+            for(let i in cadastros){
+                if(i.nome==nome){
+                    encontrado=true
+                    if(i.senha==senha){
+                        console.log("login realizado\n")
+                        log=true
+                        login = i
+                        break
+                    }
+                    else{
+                        console.log("senha inválida\n")
+                        break
+                    }
+                }
+                indice++
+            }
+            in_login=indice
+            if(encontrado==false){
+                console.log("login inválido\n")
+            }
+        }
+    }
+
+    sair(){
+        programa=false
+    }
+
+    dados(){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+            console.log(login.nome)
+            console.log(login.senha)
+        }
+    }
+
+    mudar_dados(nome,senha){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+            login.nome=nome
+            login.senha=senha
+            cadastros[in_login]=login
+        }
+    }
+}
