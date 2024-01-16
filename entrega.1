@@ -1,4 +1,16 @@
+const { none } = require("list")
+
 const prompt=require("prompt-sync")({sigint:true})
+
+var cadastros=[];
+var usuarios=[];
+var propriedades=[];
+var reservas=[];
+var anuncios=[];
+var log=true;
+var login=null;
+var in_login=0;
+var avaliacoes=[];
 
 class Usuario{
     constructor(id,nome,contato,reserva){
@@ -6,6 +18,7 @@ class Usuario{
         this.nome=nome
         this.contato=contato
         this.reserva=reserva
+        usuarios.push(this)
     }
 }
 
@@ -18,6 +31,9 @@ class Propriedade{
         this.quartos=quartos
         this.preco=preco
         this.disponibilidade=disponibilidade
+        this.reservada=false
+        this.anunciada=false
+        propriedades.push(this)
     }
 }
 
@@ -30,6 +46,7 @@ class Reserva{
         this.checkout=checkout
         this.total=total
         this.status=status
+        reservas.push(this)
     }
 }
 
@@ -41,75 +58,77 @@ class Anuncio{
         this.titulo=titulo
         this.descricao=descricao
         this.status=status
+        anuncios.push(this)
     }
 }
 
-var cadastros=[]
-var usuarios=[]
-var propriedades=[]
-var reservas=[]
-var anuncios=[]
-var log=false
-var login
-var in_login=0
-var programa=true
+class Avaliacao{
+    constructor(nota,comentario){
+        this.nota=nota
+        this.comentario=comentario
+        avaliacoes.push(this)
+    }
+}
+
+function ordem_alfabetica(a,b){
+    return a.nome.localeCompare(b.nome)
+}
+
+function ordem_alfabetica2(a,b){
+    return a.titulo.localeCompare(b.titulo)
+}
+
+function ordem_cronologica(a,b){
+    return (a.checkin - b.checkin)
+}
 
 class Cadastro{
     constructor(nome,senha){
         this.nome=nome
         this.senha=senha
+        cadastros.push(this)
     }
 }
 
 class Sistema{
     cadastro(nome,senha){
-        if(cadastros.length()==0){
-            let a = new Cadastro(nome,senha)
-            cadastros.append(a)
-        }
-        else{
             var repetido=false
-            for(let i in cadastros){
+            for(let i of cadastros){
                 if(i.nome==nome){
                     console.log("nome repetido\n")
                     repetido=true
                     break
                 }
             }
-            if(repetido=false){
+            if(repetido==false){
                 let a = new Cadastro(nome,senha)
-                cadastros.append(a)
+                cadastros.push(a)
+                console.log("cadastro feito")
             }
-        }
     }
 
     login(nome,senha){
-        if(cadastros.length()==0){
-            console.log("login inválido\n")
-        }
-        else{
-            var encontrado=false
-            var indice=0
-            for(let i in cadastros){
-                if(i.nome==nome){
-                    encontrado=true
-                    if(i.senha==senha){
-                        console.log("login realizado\n")
-                        log=true
-                        login = i
-                        break
-                    }
-                    else{
-                        console.log("senha inválida\n")
-                        break
-                    }
+        var encontrado=false
+        var indice=0
+        for(let i of cadastros){
+            if(i.nome==nome){
+                encontrado=true
+                if(i.senha==senha){
+                    console.log("login realizado\n")
+                    log=true
+                    login = i
+                    break
                 }
-                indice++
+                else{
+                    console.log("senha inválida\n")
+                    break
+                }
             }
-            in_login=indice
-            if(encontrado==false){
-                console.log("login inválido\n")
-            }
+            indice++
+        }
+        in_login=indice
+        if(encontrado==false){
+            console.log("login inválido\n")
         }
     }
 
@@ -135,6 +154,300 @@ class Sistema{
             login.nome=nome
             login.senha=senha
             cadastros[in_login]=login
+        }
+    }
+
+    ver_propriedades(){
+        console.log(propriedades.sort(ordem_alfabetica))
+    }
+
+    ver_reservas(){
+        console.log(reservas.sort(ordem_cronologica))
+    }
+
+    ver_anuncios(){
+        console.log(anuncios.sort(ordem_alfabetica2))
+    }
+
+    reservar_propriedade(id,id_propriedade,id_usuario,checkin,checkout,total,status){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+            var encontrado=false
+            for(let i of propriedades){
+                if(i.id==id_propriedade){
+                    encontrado=true
+                    if(i.disponibilidade==true){
+                        let a=new Reserva(id,id_propriedade,id_usuario,checkin,checkout,total,status)
+                        i.reservada=true
+                        console.log("reserva concluida\n")
+                        break
+                    }
+                    else{
+                        console.log("propriedade indisponivel\n")
+                        break
+                    }
+                }
+            }
+            if(encontrado==false){
+                console.log("propriedade não encontrada\n")
+            }
+        }
+    }
+
+    cancelar_reserva(id_propriedade){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+
+            var encontrado=false
+            var index=0
+            for(let i of reservas){
+                if(i.id_propriedade==id_propriedade){
+                    encontrado=true
+                    if(i.checkin){  //não implementei a mecanica de 24 horas pois a biblioteca de tempo que eu uso
+                                        // deixaria o programa pesado, mas caso essa mecanica existisse ela entraria aqui
+                        reservas.splice[index,index]
+                        console.log("reserva cancelada\n")
+                        break
+                    }
+                    else{
+                        console.log("reserva dentro de 24horas\n")
+                        break
+                    }
+                }
+                index++
+            }
+            if(encontrado==false){
+                console.log("reserva não encontrada\n")
+            }
+        }
+    }
+
+    excluir_propriedade(id_propriedade){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+                var encontrado=false
+                var index=0
+                for(let i of propriedades){
+                    if(i.id==id_propriedade){
+                        encontrado=true
+                        if(i.reservada==false && i.anunciada==false){
+                            propriedades.splice(index,index)
+                            console.log("propriedade excluida\n")
+                            break
+                        }
+                        if(i.reservada==false && i.anunciada==true){
+                            var index2=0
+                            for(let j of anuncios){
+                                if(j.id_propriedade==id_propriedade){
+                                    anuncios.splice(index2,index2)
+                                    console.log("prpriedade excluida\n")
+                                    break
+                                }
+                                index++
+                            }
+                            break
+                        }
+                        if(i.reservada=true){
+                            console.log("propriedade reservada\n")
+                            break
+                        }
+                    }
+                    index++
+                }
+                if(encontrado==false){
+                    console.log("propriedade não encontrada\n")
+                }
+            
+        }
+    }
+
+    anunciar(id,id_proprietario,id_propriedade,titulo,descricao,status){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+                var encontrado=false
+                for(let i of propriedades){
+                    if(i.id==id_propriedade){
+                        encontrado=true
+                        if(i.anunciada==false){
+                            let a=new Anuncio(id,id_proprietario,id_propriedade,titulo,descricao,status)
+                            i.anunciada=true
+                            console.log("anuncio feito\n")
+                            break
+                        }
+                        else{
+                            console.log("propriedade já possui um anuncio\n")
+                            break
+                        }
+                    }
+                }
+                if(encontrado==false){
+                    console.log("propriedade não encontrada\n")
+                }
+        }
+    }
+
+    excluir_anuncio(id_anuncio){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+            
+                var encontrado=false
+                var index=0
+                for(let i of anuncios){
+                    if(i.id==id_anuncio){
+                        encontrado=true
+                        anuncios.splice(index,index)
+                        console.log("anuncio excluido\n")
+                        break
+                    }
+                    index++
+                }
+                if(encontrado==false){
+                    console.log("anuncio não encontrado\n")
+                }
+            
+        }
+    }
+
+    avaliar(nota,comentario){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+        let a= new Avaliacao(nota,comentario)
+        }
+    }
+
+    ver_avaliacoes(){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+            console.log(avaliacoes)
+        }
+    }
+
+    adcionar_propriedade(id,nome,endereco,capacidade,quartos,preco,disponibilidade){
+        if(log==false){
+            console.log("não está logado\n")
+        }
+        else{
+            let a = new Propriedade(id,nome,endereco,capacidade,quartos,preco,disponibilidade)
+        }
+    }
+}
+
+sistema= new Sistema()
+
+while(true){
+    let comando=prompt("digite o comando (1-15): ")
+    if(comando=="sair()"){
+        break
+    }
+    else{
+        if(comando==1){
+            console.log("fazendo cadastro")
+            let nome=prompt("nome: ")
+            let senha=prompt("senha: ")
+            sistema.cadastro(nome,senha)
+        }
+        if(comando==2){
+            console.log("fazendo login")
+            let nome=prompt("nome: ")
+            let senha=prompt("senha: ")
+            sistema.login(nome,senha)
+        }
+        if(comando==3){
+            console.log("seus dados")
+            sistema.dados()
+        }
+        if(comando==4){
+            console.log("mudar dados")
+            let nome=prompt("novo nome: ")
+            let senha=prompt("nova senha: ")
+            sistema.mudar_dados(nome,senha)
+        }
+        if(comando==5){
+            console.log("ver propriedades")
+            sistema.ver_propriedades()
+        }
+        if(comando==6){
+            console.log("ver reservas")
+            sistema.ver_reservas()
+        }
+        if(comando==7){
+            console.log("ver anuncios")
+            sistema.ver_anuncios()
+        }
+        if(comando==8){
+            console.log("reservar propriedade")
+            let id=prompt("id da reserva: ")
+            let id_propriedade=prompt("id da propriedade: ")
+            let id_usuario=prompt("id do usuario: ")
+            let checkin=prompt("data de check-in: ")
+            let checkout= prompt("data de check-out: ")
+            let total=prompt("valor total: ")
+            let status=prompt("status do pagamento: ")
+            sistema.reservar_propriedade(id,id_propriedade,id_usuario,checkin,checkout,total,status)
+        }
+        if(comando==9){
+            console.log("cancelar reserva")
+            let id_propriedade=prompt("id da propriedade: ")
+            sistema.cancelar_reserva(id_propriedade)
+        }
+        if(comando==10){
+            console.log("excluir propriedade")
+            let id_propriedade=prompt("id da propriedade: ")
+            sistema.excluir_propriedade(id_propriedade)
+            
+        }
+        if(comando==11){
+            console.log("anunciar")
+            let id=prompt("id da reserva: ")
+            let id_proprietario=prompt("id do proprietario: ")
+            let id_propriedade=prompt("id da propriedade: ")
+            let titulo=prompt("titulo: ")
+            let descricao= prompt("descrição: ")
+            let status=prompt("status: ")
+            sistema.anunciar(id,id_proprietario,id_propriedade,titulo,descricao,status)
+            
+        }
+        if(comando==12){
+            console.log("excluir anuncio")
+            let id_anuncio=prompt("id do anuncio: ")
+            sistema.excluir_anuncio(id_anuncio)
+            
+        }
+        if(comando==13){
+            console.log("avaliar")
+            let nota=prompt("sua nota: ")
+            let comentario=prompt("seu comentario: ")
+            sistema.avaliar(nota,comentario)
+        }
+        if(comando==14){
+            console.log("ver alaliações")
+            sistema.ver_avaliacoes()
+            
+        }
+        if(comando==15){
+            console.log("adicionar propriedade")
+            let id=prompt("id da reserva: ")
+            let nome=prompt("nome da propriedade: ")
+            let endereco=prompt("endereço: ")
+            let capacidade=prompt("capacidade total: ")
+            let quartos= prompt("quantos quartos: ")
+            let preco=prompt("preço por noite: ")
+            let disponibilidade=prompt("disponibilidade: ")
+            sistema.adcionar_propriedade(id,nome,endereco,capacidade,quartos,preco,disponibilidade)
         }
     }
 }
